@@ -1,95 +1,123 @@
-# companion-pack-protocol
+# @companion/pack-protocol
 
-Protocol types and helpers for building League Companion gamepacks.
+TypeScript types and utilities for building Clip Companion game packs.
 
-## Overview
+## Installation
 
-This crate provides the core protocol types and a runtime helper for building
-gamepack daemons that communicate with the main League Companion application.
+```bash
+npm install @companion/pack-protocol
+# or
+pnpm add @companion/pack-protocol
+```
 
-## Quick Start
+## Usage
 
-```rust
-use companion_pack_protocol::{run_gamepack, GamepackHandler, GamepackResult};
-use companion_pack_protocol::{InitResponse, GameStatus, GameEvent, MatchData};
+### Creating a Game Pack
 
-struct MyGameIntegration {
-    // Your game-specific state
+```typescript
+import type { GamePack, BaseMatch } from "@companion/pack-protocol";
+import { usePackCache } from "@companion/pack-protocol";
+import { MatchCard } from "./components/MatchCard";
+
+// Extend BaseMatch with game-specific fields
+interface MyGameMatch extends BaseMatch {
+  kills: number;
+  deaths: number;
+  assists: number;
 }
 
-impl GamepackHandler for MyGameIntegration {
-    fn init(&mut self) -> GamepackResult<InitResponse> {
-        Ok(InitResponse {
-            game_id: 99,
-            slug: "my-game".to_string(),
-            protocol_version: 1,
-        })
-    }
+// Define your pack
+const pack: GamePack<MyGameMatch> = {
+  gameId: 99,
+  slug: "my-game",
+  MatchCard,
+  isMatch: (match): match is MyGameMatch => match.gameId === 99,
+};
 
-    fn detect_running(&self) -> bool {
-        // Check if the game process is running
-        false
-    }
+export default pack;
+```
 
-    fn get_status(&self) -> GameStatus {
-        GameStatus {
-            connected: false,
-            connection_status: "Not connected".to_string(),
-            game_phase: None,
-            is_in_game: false,
-        }
-    }
+### Using the Cache API
 
-    fn poll_events(&mut self) -> Vec<GameEvent> {
-        // Return any new game events
-        vec![]
-    }
+```typescript
+import { usePackCache } from "@companion/pack-protocol";
 
-    fn get_live_data(&self) -> Option<serde_json::Value> {
-        // Return live match data if in-game
-        None
-    }
+function MyComponent() {
+  const cache = usePackCache();
 
-    fn on_session_start(&mut self) -> Option<serde_json::Value> {
-        // Called when a game session starts
-        None
-    }
+  const loadData = async () => {
+    // Check cache first
+    const cached = await cache.read<MyData>("data.json");
+    if (cached) return cached;
 
-    fn on_session_end(&mut self, _context: serde_json::Value) -> Option<MatchData> {
-        // Called when a game session ends, return match data
-        None
-    }
-
-    fn shutdown(&mut self) {
-        // Cleanup on shutdown
-    }
-}
-
-fn main() {
-    let handler = MyGameIntegration { };
-    run_gamepack(handler);
+    // Fetch and cache
+    const data = await fetchFromNetwork();
+    await cache.write("data.json", data);
+    return data;
+  };
 }
 ```
 
-## Protocol
+### Vite Configuration
 
-Communication happens over stdin/stdout using newline-delimited JSON (NDJSON).
+```typescript
+// vite.config.ts
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import { companionPack } from "@companion/pack-protocol/vite";
 
-### Commands (daemon -> gamepack)
+export default defineConfig({
+  plugins: [
+    react(),
+    companionPack({
+      packId: "my-game",
+      packName: "MyGamePack",
+    }),
+  ],
+});
+```
 
-- `init` - Initialize the integration
-- `detect_running` - Check if game is running
-- `get_status` - Get connection status
-- `poll_events` - Poll for new game events
-- `get_live_data` - Get live match data
-- `session_start` - Game session started
-- `session_end` - Game session ended
-- `shutdown` - Graceful shutdown
+## API Reference
 
-### Responses (gamepack -> daemon)
+### Types
 
-Each command has a corresponding response type. All responses include a `request_id`
-field for correlation.
+- `BaseMatch` - Base match type all packs extend
+- `MatchCardProps<T>` - Props for match card components
+- `LiveMatchCardProps<T>` - Props for live match components
+- `GamePack<T>` - Interface packs must implement
+- `PackCacheAPI` - Sandboxed cache interface
+- `PackContext` - Context provided to packs
+- `GameEvent` - Game event for clip triggers
+- `GameStatus` - Game connection status
+- `MatchData` - End-of-match data
+
+### Hooks
+
+- `usePackContext()` - Access full pack context
+- `usePackCache()` - Access cache API
+
+### Sandbox Runtime
+
+For packs running in sandboxed iframes:
+
+- `initSandboxRuntime()` - Initialize the sandbox bridge
+- `getSandboxedCacheAPI()` - Get cache API via postMessage
+- `useSandboxedCache()` - Hook-like cache access
+
+### Vite Plugin
+
+- `companionPack(options)` - Configure Vite for pack builds
+
+## Security
+
+Game packs run in sandboxed iframes with limited capabilities:
+
+- ✅ Can cache data (namespaced by game ID)
+- ✅ Can make fetch requests
+- ✅ Can render React components
+- ❌ Cannot access host window
+- ❌ Cannot access localStorage
+- ❌ Cannot access Electron APIs
 
 ## License
 
