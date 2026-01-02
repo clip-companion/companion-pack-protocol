@@ -13,7 +13,9 @@ import type { ComponentType } from "react";
 export interface BaseMatch {
   /** Unique match identifier */
   id: string;
-  /** Game ID this match belongs to */
+  /** Pack UUID (stable internal identifier) */
+  packId?: string;
+  /** Game ID this match belongs to (for backwards compatibility) */
   gameId: number;
   /** ISO timestamp of when the match was played */
   playedAt: string;
@@ -122,7 +124,10 @@ export interface PackCacheAPI {
  * This is the sandboxed environment packs operate within.
  */
 export interface PackContext {
-  /** Game ID this pack is registered for */
+  /** Pack UUID (stable internal identifier) */
+  packId: string;
+
+  /** Game ID this pack is registered for (for backwards compatibility) */
   gameId: number;
 
   /** Cache API for storing game-specific data */
@@ -157,7 +162,10 @@ export interface GamePack<
   TMatch extends BaseMatch = BaseMatch,
   TLiveMatch = unknown,
 > {
-  /** Static game ID (must be unique across all packs) */
+  /** Pack UUID (stable internal identifier) */
+  packId: string;
+
+  /** Static game ID (for backwards compatibility) */
   gameId: number;
 
   /** URL-safe slug (e.g., "league", "valorant") */
@@ -186,6 +194,12 @@ export interface GamePack<
 
   /** Type guard to check if a match belongs to this game */
   isMatch: (match: BaseMatch) => match is TMatch;
+
+  /**
+   * Initialize game assets.
+   * @deprecated Use resources.init() instead
+   */
+  initAssets?: () => Promise<void>;
 }
 
 /**
@@ -193,6 +207,7 @@ export interface GamePack<
  * Uses unknown for flexibility when loading packs dynamically.
  */
 export interface RuntimeGamePack {
+  packId: string;
   gameId: number;
   slug: string;
   MatchCard: ComponentType<{
@@ -259,9 +274,11 @@ export interface GameStatus {
  * Match data returned when a game session ends.
  */
 export interface MatchData {
+  /** Pack UUID (stable internal identifier) */
+  packId?: string;
   /** Game slug (e.g., "league") */
   gameSlug: string;
-  /** Game ID */
+  /** Game ID (for backwards compatibility) */
   gameId: number;
   /** Match result */
   result: "win" | "loss" | "remake" | "unknown";

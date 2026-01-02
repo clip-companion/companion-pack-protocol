@@ -171,6 +171,11 @@ interface GamePack<TMatch extends BaseMatch = BaseMatch, TLiveMatch = unknown> {
     AssetsStatus?: ComponentType;
     /** Type guard to check if a match belongs to this game */
     isMatch: (match: BaseMatch) => match is TMatch;
+    /**
+     * Initialize game assets.
+     * @deprecated Use resources.init() instead
+     */
+    initAssets?: () => Promise<void>;
 }
 /**
  * Runtime game pack interface.
