@@ -84,6 +84,19 @@ pub enum GamepackCommand {
         #[serde(skip_serializing_if = "Option::is_none")]
         limit: Option<u32>,
     },
+
+    // ========================================================================
+    // DEBUG / PREVIEW
+    // ========================================================================
+
+    /// Request sample match data for UI preview/testing.
+    /// The gamepack should return randomized but valid match data.
+    /// Expected response: `SampleMatchData`
+    GetSampleMatchData {
+        request_id: String,
+        /// Subpack index (0 = default/main game mode)
+        subpack: u8,
+    },
 }
 
 impl GamepackCommand {
@@ -101,6 +114,7 @@ impl GamepackCommand {
             Self::ResolveEventIcon { request_id, .. } => request_id,
             Self::IsMatchInProgress { request_id, .. } => request_id,
             Self::GetMatchTimeline { request_id, .. } => request_id,
+            Self::GetSampleMatchData { request_id, .. } => request_id,
         }
     }
 }

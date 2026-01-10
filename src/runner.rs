@@ -304,6 +304,22 @@ fn dispatch_command<H: GamepackHandler>(handler: &mut H, cmd: GamepackCommand) -
                 entries: vec![],
             }
         }
+
+        GamepackCommand::GetSampleMatchData { subpack, .. } => {
+            let data = handler.get_sample_match_data(subpack);
+            match data {
+                Some(data) => GamepackResponse::SampleMatchData {
+                    request_id,
+                    subpack,
+                    data,
+                },
+                None => GamepackResponse::Error {
+                    request_id,
+                    message: format!("Sample data not implemented for subpack {}", subpack),
+                    code: Some("NOT_IMPLEMENTED".to_string()),
+                },
+            }
+        }
     }
 }
 

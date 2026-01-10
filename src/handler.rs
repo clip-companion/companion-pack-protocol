@@ -182,4 +182,15 @@ pub trait GamepackHandler {
     ) -> IsMatchInProgressResponse {
         IsMatchInProgressResponse::ended()
     }
+
+    /// Generate sample match data for UI preview/testing.
+    ///
+    /// Called by debug tools to get randomized but valid match data for
+    /// previewing the MatchCard component. The returned JSON should match
+    /// the schema expected by the pack's MatchCard component.
+    ///
+    /// Default implementation returns `None`.
+    fn get_sample_match_data(&self, _subpack: u8) -> Option<serde_json::Value> {
+        None
+    }
 }
