@@ -123,6 +123,19 @@ pub enum GamepackResponse {
         /// The match data message to process
         message: MatchDataMessage,
     },
+
+    // ========================================================================
+    // DEBUG / PREVIEW
+    // ========================================================================
+
+    /// Sample match data for UI preview/testing.
+    SampleMatchData {
+        request_id: String,
+        /// Subpack index this data is for
+        subpack: u8,
+        /// Match data as JSON (pack-specific schema, same format as MatchCard expects)
+        data: serde_json::Value,
+    },
 }
 
 impl GamepackResponse {
@@ -142,6 +155,7 @@ impl GamepackResponse {
             Self::EventIconResolved { request_id, .. } => request_id,
             Self::MatchInProgressStatus { request_id, .. } => request_id,
             Self::MatchTimeline { request_id, .. } => request_id,
+            Self::SampleMatchData { request_id, .. } => request_id,
             // WriteMatchData is unsolicited, no request_id
             Self::WriteMatchData { .. } => "",
         }
